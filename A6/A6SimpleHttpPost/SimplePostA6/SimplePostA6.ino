@@ -1,16 +1,11 @@
 /*
-  Simple POST client for ArduinoHttpClient library
-  Connects to server once every five seconds, sends a POST request
-  and a request body
-
-
-
-  created 14 Feb 2016
-  by Tom Igoe
-
-  this example is in the public domain
+  Modified from (Simple POST created 14 Feb 2016 by Tom Igoe)
+  Edited by Hieu Ho
+  American River College - Beaver Constant Backflow Monitor
+  updated March 25
 */
-//#include "arduino_secrets.h"
+///DEVICE ID  in Arduino Secrets
+#include "arduino_secrets.h"
 #define TINY_GSM_MODEM_A6
 // Increase RX buffer if needed
 //#define TINY_GSM_RX_BUFFER 512
@@ -22,7 +17,7 @@
 #include <RTClib.h>
 #include <Wire.h>
 RTC_DS3231 rtc;
-////
+//
 
 // Uncomment this if you want to see all AT commands
 #define DUMP_AT_COMMANDS
@@ -31,17 +26,12 @@ RTC_DS3231 rtc;
 #define SerialMon Serial
 #define TINY_GSM_DEBUG SerialMon
 
-// Use Hardware Serial on Mega, Leonardo, Micro
-//#define SerialAT Serial1
-
 // or Software Serial on Uno, Nano
 #include <SoftwareSerial.h>
 SoftwareSerial SerialAT(2, 3); // RX, TX
 
-
 // Your GPRS credentials
 // Leave empty, if missing user or pass
-#define DEVICE_ID 2
 const char apn[]  = "hologram";
 const char user[] = "";
 const char pass[] = "";
@@ -62,6 +52,7 @@ TinyGsm modem(SerialAT);
 #endif
 
 TinyGsmClient client(modem);
+int timeoutCount = 0;
 //HttpClient http(client, server, port);
 
 
@@ -138,27 +129,19 @@ void loop() {
     String temp = String(psi0);
     String psi1 = String(psi0 + 56);
     String psi2 = String(psi0 + 12);
-
     //data ="p1=" + temp + "&p2=" + psi1 + "&p3=" + psi2;
-    ///////////////////
-//  String gsmTime = modem.getGSMDateTime(DATE_TIME);
-//  DBG("GSM Time:", gsmTime);
-//  String gsmDate = modem.getGSMDateTime(DATE_DATE);
-//  DBG("GSM Date:", gsmDate);
-//    //////////////////
-
 
 //  Testing Real Time Clock on A6
 ////////////////////////////////////////////
-    modem.sendAT("+CCLK?");
-    String res;
-    if (modem.waitResponse(1000L, res) != 1) {
-      return "";
-    }
-    //res.replace(GSM_NL "OK" GSM_NL, "");
-    //res.replace(GSM_NL, " ");
-    res.trim();
-    SerialMon.println (String("DateTime: ") + res);
+//    modem.sendAT("+CCLK?");
+//    String res;
+//    if (modem.waitResponse(1000L, res) != 1) {
+//      return "";
+//    }
+//    //res.replace(GSM_NL "OK" GSM_NL, "");
+//    //res.replace(GSM_NL, " ");
+//    res.trim();
+//    SerialMon.println (String("DateTime: ") + res);
 
 //////////////////////////////////////
 
@@ -215,7 +198,21 @@ void loop() {
         SerialMon.println(F("Server disconnected"));
        
     }
- 
+
+    //SafeSwitch Function
+    ++TimeoutCounter;
+    if (TimeoutCounter >= 15)
+    {
+      TimeoutCounter = 0;
+      // Restart takes quite some time
+      // To skip it, call init() instead of restart()
+      SerialMon.println(F("Initializing modem..."));
+      modem.restart();
+    
+      String modemInfo = modem.getModemInfo();
+      SerialMon.print(F("Modem: "));
+      SerialMon.println(modemInfo);
+    }
 
     //Checking POST Response////////////////
     //SerialMon.print("Status code: ");
@@ -234,8 +231,10 @@ void loop() {
       SerialMon.println("GPRS disconnect: Failed.");
     }
 
-    SerialMon.println("Wait two Minutes");
-    delay(120000);
+    SerialMon.print("Wait");
+    SerialMon.print(READ_INTERVAL);
+    SerialMon.print("Minutes");
+    delay(READ_INTERVAL*60*1000);
 
     }//End of Internal For loop
     
