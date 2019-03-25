@@ -52,7 +52,7 @@ TinyGsm modem(SerialAT);
 #endif
 
 TinyGsmClient client(modem);
-int timeoutCount = 0;
+int timeoutCounter = 0;
 //HttpClient http(client, server, port);
 
 
@@ -199,11 +199,11 @@ void loop() {
        
     }
 
-    //SafeSwitch Function
-    ++TimeoutCounter;
-    if (TimeoutCounter >= 15)
+    //Modem Reset Function
+    ++timeoutCounter;
+    if (timeoutCounter >= TIMEOUT_LIMIT)
     {
-      TimeoutCounter = 0;
+      timeoutCounter = 0;
       // Restart takes quite some time
       // To skip it, call init() instead of restart()
       SerialMon.println(F("Initializing modem..."));
